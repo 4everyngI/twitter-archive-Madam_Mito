@@ -1,0 +1,58 @@
+```yaml
+name: Update Archive
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Каждое воскресенье
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install snscrape
+        run: pip install snscrape
+      
+      - name: Collect tweets
+        run: |
+          USERNAME="Madam_Mito"
+          
+          snscrape --jsonl --max-results 5000 twitter-user:$USERNAME > temp.jsonl
+          
+          python3 << 'EOF'
+          import json
+          tweets = []
+          with open('temp.jsonl') as f:
+              for line in f:
+                  if line.strip():
+                      tweet = json.loads(line)
+                      tweets.append({
+                          'id': tweet.get('id'),
+                          'url': tweet.get('url'),
+                          'date': tweet.get('date'),
+                          'content': tweet.get('content', ''),
+                          'likeCount': tweet.get('likeCount', 0),
+                          'retweetCount': tweet.get('retweetCount', 0),
+                      })
+          
+          tweets.sort(key=lambda x: x['date'], reverse=True)
+          
+          with open('data/tweets.json', 'w', encoding='utf-8') as f:
+              json.dump(tweets, f, ensure_ascii=False, indent=2, default=str)
+          EOF
+      
+      - name: Commit changes
+        run: |
+          git config user.name 'GitHub Action'
+          git config user.email 'action@github.com'
+          git add data/tweets.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update: $(date)" && git push)
+```
