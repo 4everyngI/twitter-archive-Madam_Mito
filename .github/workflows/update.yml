@@ -24,7 +24,7 @@ jobs:
         run: |
           USERNAME="Madam_Mito"
           
-          snscrape --jsonl --max-results 5000 twitter-user:$USERNAME > temp.jsonl
+          snscrape --jsonl --max-results 5000 twitter-usesnscrape --jsonl --max-results 5000 --since 2020-01-01 twitter-search "from:$USERNAME" > temp.jsonlr:$USERNAME > temp.jsonl
           
           python3 << 'EOF'
           import json
