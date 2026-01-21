@@ -1,0 +1,136 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Archive</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, sans-serif;
+            background: linear-gradient(to bottom, #15202b, #1a2732);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #1da1f2, #0d8bd9);
+            padding: 40px;
+            text-align: center;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 42px; margin-bottom: 10px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .search-box {
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 18px 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 17px;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #1da1f2;
+        }
+        .tweet {
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1da1f2;
+        }
+        .tweet-content {
+            color: #fff;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .tweet-stats {
+            color: #8899a6;
+            font-size: 14px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #8899a6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="username">@username</h1>
+            <p>Twitter Archive</p>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" 
+                   placeholder="🔍 Поиск...">
+        </div>
+        
+        <div id="results" class="loading">Загрузка данных...</div>
+    </div>
+
+    <script>
+        let allData = [];
+        const searchInput = document.getElementById('searchInput');
+        const results = document.getElementById('results');
+        
+        async function loadData() {
+            try {
+                const response = await fetch('data/tweets.json');
+                allData = await response.json();
+                displayResults();
+            } catch (error) {
+                results.innerHTML = '<div class="loading">Данные ещё не загружены. Подождите автообновление.</div>';
+            }
+        }
+        
+        searchInput.addEventListener('input', displayResults);
+        
+        function displayResults() {
+            const query = searchInput.value.toLowerCase();
+            let filtered = allData;
+            
+            if (query) {
+                filtered = filtered.filter(t => 
+                    (t.content || '').toLowerCase().includes(query)
+                );
+            }
+            
+            if (filtered.length === 0) {
+                results.innerHTML = '<div class="loading">Ничего не найдено</div>';
+                return;
+            }
+            
+            results.innerHTML = filtered.slice(0, 50).map(tweet => `
+                <div class="tweet">
+                    <div class="tweet-content">${escapeHtml(tweet.content || '')}</div>
+                    <div class="tweet-stats">
+                        ❤️ ${tweet.likeCount || 0} | 🔄 ${tweet.retweetCount || 0} | 
+                        ${new Date(tweet.date).toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        loadData();
+    </script>
+</body>
+</html>
+```
